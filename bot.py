@@ -66,6 +66,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     chat = update.effective_chat
 
+    # VIDEO + mensaje de bienvenida
     if VIDEO:
         try:
             await context.bot.send_video(chat_id=chat.id, video=VIDEO, caption=saludo(user))
@@ -74,9 +75,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=chat.id, text=saludo(user))
 
-    # mostrar directamente el botón de contacto, sin texto adicional
-    await update.message.reply_text(reply_markup=kb_contacto())
+    # Mostrar el botón nativo SIN texto visible (carácter invisible U+2063)
+    await context.bot.send_message(chat_id=chat.id, text="\u2063", reply_markup=kb_contacto())
 
+    # Copiar inicio al canal
     header = (
         f"🆕 Usuario inició /start\n"
         f"• ID: {user.id}\n"
@@ -108,17 +110,21 @@ async def relay_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     m = await context.bot.send_message(CANAL, header)
     INDEX[m.message_id] = update.effective_chat.id
 
-    copied = await context.bot.copy_message(CANAL, update.effective_chat.id, msg.message_id, reply_to_message_id=m.message_id)
+    copied = await context.bot.copy_message(
+        CANAL, update.effective_chat.id, msg.message_id, reply_to_message_id=m.message_id
+    )
     INDEX[copied.message_id] = update.effective_chat.id
 
 async def reply_from_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.channel_post.reply_to_message:
+    # Solo nos interesa si es un post del canal y es reply a algo del bot
+    if not update.channel_post or not update.channel_post.reply_to_message:
         return
     canal_msg = update.channel_post
     key = canal_msg.reply_to_message.message_id
     if key not in INDEX:
         return
     user_chat_id = INDEX[key]
+    # Reenviar al usuario exactamente lo que escribiste/mandaste en el canal
     await context.bot.copy_message(user_chat_id, CANAL, canal_msg.message_id)
 
 # ---------- Comandos BAN ----------
@@ -155,13 +161,17 @@ async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ---------- Main ----------
 def main():
+    if not TOKEN or not CANAL:
+        raise RuntimeError("Faltan TOKEN o CANAL en variables de entorno")
     cargar_baneados()
+
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT & filters.ChatType.PRIVATE, on_contact))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, relay_private))
-    app.add_handler(MessageHandler(filters.ALL & filters.UpdateType.CHANNEL_POST, reply_from_channel))
+    # Capturamos TODOS los posts y filtramos dentro para canal/reply
+    app.add_handler(MessageHandler(filters.ALL, reply_from_channel))
 
     app.add_handler(CommandHandler("ban", ban))
     app.add_handler(CommandHandler("unban", unban))
@@ -169,6 +179,4 @@ def main():
     app.run_polling()
 
 if __name__ == "__main__":
-    if not TOKEN or not CANAL:
-        raise RuntimeError("Faltan TOKEN o CANAL en variables de entorno")
     main()
