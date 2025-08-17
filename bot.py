@@ -14,14 +14,31 @@ CANAL = int(os.getenv("CANAL", "0"))   # canal privado (ej: -1001234567890)
 VIDEO = os.getenv("VIDEO", "").strip() # file_id o URL
 # ==============================
 
-# Diccionario en memoria: msg_id_en_canal -> chat_id_usuario
-INDEX = {}
+INDEX = {}    # msg_id_en_canal -> chat_id_usuario
+BANNED = set()  # usuarios baneados
+BANNED_FILE = "baneados.txt"
+
+# ---------- Funciones BAN persistente ----------
+def cargar_baneados():
+    if not os.path.exists(BANNED_FILE):
+        return
+    with open(BANNED_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                BANNED.add(int(line.strip()))
+            except:
+                pass
+
+def guardar_baneados():
+    with open(BANNED_FILE, "w", encoding="utf-8") as f:
+        for uid in sorted(BANNED):
+            f.write(f"{uid}\n")
 
 # ---------- Textos ----------
 def saludo(u) -> str:
     return (
         f"𝐇𝐨𝐥𝐚 {u.full_name} 𝐞𝐬𝐭𝐚𝐬 𝐞𝐧 𝐞𝐥 𝐥𝐮𝐠𝐚𝐫 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐨 𝐩𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨.\n\n"
-        f"𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧 “𝐄𝐧𝐯𝐢𝐚𝐫 𝐚 𝐦𝐢 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨” 𝐩𝐚𝐫𝐚 𝐞𝐧𝐯𝐢𝐚𝐫𝐭𝐞 𝐞𝐥 𝐞𝐧𝐥𝐚𝐜𝐞 𝐝𝐞𝐥 𝐠𝐫𝐮𝐩𝐨 𝐚 𝐭𝐮 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨."
+        f"𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧 “𝐄𝐧𝐯𝐢𝐚𝐫 𝐚 𝐦𝐢 𝐜𝐡𝐚𝐭 𝐩𝐫𝐢𝐯𝐚𝐝𝐨” 𝐩𝐚𝐫𝐚 𝐞𝐧𝐯𝐢𝐚𝐫𝐭𝐞 𝐞𝐥 𝐞𝐧𝐥𝐚𝐜𝐞 𝐝𝐞𝐥 𝐠𝐫𝐮𝐩𝐨."
     )
 
 def post_contacto(u) -> str:
@@ -37,15 +54,16 @@ def kb_contacto():
 
 def kb_unirme():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/CubanitasXXX_bot")]
+        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/CubanitasX_bot")]
     ])
 
 # ---------- Handlers ----------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat = update.effective_chat
+    if update.effective_user.id in BANNED:
+        return
     user = update.effective_user
+    chat = update.effective_chat
 
-    # Video + mensaje
     if VIDEO:
         try:
             await context.bot.send_video(chat_id=chat.id, video=VIDEO, caption=saludo(user))
@@ -54,10 +72,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=chat.id, text=saludo(user))
 
-    # Pedir contacto
     await update.message.reply_text("Para continuar, comparte tu número:", reply_markup=kb_contacto())
 
-    # Copiar al canal
     header = (
         f"🆕 Usuario inició /start\n"
         f"• ID: {user.id}\n"
@@ -68,18 +84,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     INDEX[m.message_id] = chat.id
 
 async def on_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id in BANNED:
+        return
     user = update.effective_user
     contact = update.message.contact
 
     await update.message.reply_text("✅ Número recibido.", reply_markup=ReplyKeyboardRemove())
     await update.message.reply_text(post_contacto(user), reply_markup=kb_unirme())
 
-    # Copiar al canal
     m = await context.bot.send_message(CANAL, f"📱 {user.full_name} compartió su número: {contact.phone_number}")
     INDEX[m.message_id] = update.effective_chat.id
 
 async def relay_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Copia todo lo que mande el usuario al canal"""
+    if update.effective_user.id in BANNED:
+        return
     user = update.effective_user
     msg = update.effective_message
 
@@ -91,7 +109,6 @@ async def relay_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
     INDEX[copied.message_id] = update.effective_chat.id
 
 async def reply_from_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Si respondes con reply en el canal, el bot manda eso al usuario"""
     if not update.channel_post.reply_to_message:
         return
     canal_msg = update.channel_post
@@ -99,18 +116,52 @@ async def reply_from_channel(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if key not in INDEX:
         return
     user_chat_id = INDEX[key]
-
-    # Reenviar al usuario
     await context.bot.copy_message(user_chat_id, CANAL, canal_msg.message_id)
+
+# ---------- Comandos BAN ----------
+async def ban(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.id != CANAL:
+        return
+    if not context.args:
+        await update.message.reply_text("Uso: /ban <user_id>")
+        return
+    try:
+        uid = int(context.args[0])
+        BANNED.add(uid)
+        guardar_baneados()
+        await update.message.reply_text(f"🚫 Usuario {uid} baneado.")
+    except:
+        await update.message.reply_text("Error: ID inválido.")
+
+async def unban(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.id != CANAL:
+        return
+    if not context.args:
+        await update.message.reply_text("Uso: /unban <user_id>")
+        return
+    try:
+        uid = int(context.args[0])
+        if uid in BANNED:
+            BANNED.remove(uid)
+            guardar_baneados()
+            await update.message.reply_text(f"✅ Usuario {uid} desbaneado.")
+        else:
+            await update.message.reply_text("Ese ID no estaba baneado.")
+    except:
+        await update.message.reply_text("Error: ID inválido.")
 
 # ---------- Main ----------
 def main():
+    cargar_baneados()
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT & filters.ChatType.PRIVATE, on_contact))
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, relay_private))
     app.add_handler(MessageHandler(filters.ALL & filters.UpdateType.CHANNEL_POST, reply_from_channel))
+
+    app.add_handler(CommandHandler("ban", ban))
+    app.add_handler(CommandHandler("unban", unban))
 
     app.run_polling()
 
