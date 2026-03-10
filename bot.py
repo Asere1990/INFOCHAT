@@ -38,7 +38,7 @@ def guardar_baneados():
 def saludo(u) -> str:
     return (
         f"𝐇𝐨𝐥𝐚 {u.full_name} 𝐞𝐬𝐭𝐚𝐬 𝐞𝐧 𝐞𝐥 𝐥𝐮𝐠𝐚𝐫 𝐜𝐨𝐫𝐫𝐞𝐜𝐭𝐨 𝐩𝐚𝐫𝐚 𝐝𝐞𝐬𝐜𝐚𝐫𝐠𝐚𝐫 𝐞𝐥 𝐜𝐨𝐧𝐭𝐞𝐧𝐢𝐝𝐨. 𝐏𝐫𝐞𝐬𝐢𝐨𝐧𝐚 𝐞𝐥 𝐛𝐨𝐭𝐨𝐧:\n"
-        f"[𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎](https://t.me/DescargarXXX_bot)\n\n"
+        f"[𝐄𝐍𝐕𝐈𝐀𝐑 𝐀 𝐌𝐈 𝐂𝐇𝐀𝐓 𝐏𝐑𝐈𝐕𝐀𝐃𝐎](https://t.me/Descargar_bot)\n\n"
     )
 
 def post_contacto(u) -> str:
@@ -54,7 +54,7 @@ def kb_contacto():
 
 def kb_unirme():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/CubanitasXXX_bot")]
+        [InlineKeyboardButton("𝐔𝐧𝐢𝐫𝐦𝐞 𝐚𝐥 𝐠𝐫𝐮𝐩𝐨", url="https://t.me/Cubanitas_bot")]
     ])
 
 # ---------- Handlers ----------
